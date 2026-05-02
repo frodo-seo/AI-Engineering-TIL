@@ -18,7 +18,7 @@ Context Engineering → Tools → RAG → Agents → MCP → Ontology → Evals 
 | 1 | Context Engineering | `01_context_eng/` | 10일 |
 | 2 | Tool Use & Structured Output | `02_tools/` | 10일 |
 | 3 | RAG 심화 | `03_rag/` | 15일 |
-| 4 | Agents | `04_agents/` | 15일 |
+| 4 | Agents (+ LangGraph) | `04_agents/` | 19일 |
 | 5 | MCP (Model Context Protocol) | `05_mcp/` | 10일 |
 | 6 | Ontology & GraphRAG | `06_ontology/` | 10일 |
 | 7 | Evals & Observability | `07_harness/` | 10일 |
@@ -26,7 +26,7 @@ Context Engineering → Tools → RAG → Agents → MCP → Ontology → Evals 
 | - | Capstone (통합 프로젝트) | `capstone/` | 30일 |
 | - | 읽은 자료 요약 | `notes/` | 수시 |
 
-총 약 **115일 ≈ 4~5개월**. 30분/일 기준. (Phase 0 skip 시 110일)
+총 약 **119일 ≈ 4~5개월**. 30분/일 기준. (Phase 0 skip 시 114일)
 
 ## 학습 규칙
 
