@@ -1,46 +1,72 @@
-# Phase 6. Ontology & GraphRAG (Optional)
+# Phase 6. GraphRAG
 
-**이 Phase 는 도메인 의존 — optional.**
-Capstone/업무에서 **그래프형 데이터** (조직도·지식 베이스·논문 인용·코드 의존성 등)나
-**관계형 질문** ("A·B 의 공통 상사는?", "이 결정은 누가 언제 뒤집었나?") 을 다룰 일이 없다면 스킵하고 Phase 7 로.
+**한 줄**: vector RAG 가 약한 **구조적 / 시계열 / 멀티홉** 질문을 그래프 + LLM 으로 푸는 패러다임. 도메인 의존, optional.
 
-**목표**: 벡터 검색만으로 안 풀리는 **관계형 질문** 을
-**지식그래프 + LLM** 으로 푸는 법.
+## 잡은 핵심 개념
 
-**기간**: 30분 × 10일
+### Graphify vs Graphiti — 자주 혼동
 
-## Day-by-Day
-
-| Day | 주제 | 산출물 |
+| | **Graphify** | **Graphiti** (Zep) |
 |---|---|---|
-| 1 | 왜 그래프인가: 벡터 RAG 가 실패하는 질문 사례 수집 | `why_graph.md` |
-| 2 | 지식그래프 기초: entity · relation · property | `kg_basics.md` |
-| 3 | LLM 으로 entity extraction (schema 기반) | `extract_entities.py` |
-| 4 | Entity resolution — 같은 인물·개념 병합 | `entity_resolution.py` |
-| 5 | **Microsoft GraphRAG** 논문 & 블로그 정독 | `graphrag_summary.md` |
-| 6 | Neo4j (또는 Kuzu) 로 작은 KG 만들기 | `build_kg.py` |
-| 7 | Cypher 쿼리 감 잡기 | `cypher_drills.md` |
-| 8 | Community detection → 요약 (GraphRAG 의 핵심 아이디어) | `community_summary.py` |
-| 9 | Hybrid: vector + graph (LightRAG 스타일) | `hybrid_kg.py` |
-| 10 | Mini-project: 내 Obsidian · 노트 → 지식그래프 | `mini_kg/` |
+| 타겟 | 코드베이스 + 문서 RAG | 에이전트 메모리 (대화·이벤트) |
+| 추출 | **AST (LLM 무료)** + 문서는 sub-agent | LLM 으로 entity·relation·timestamp |
+| 그래프 | NetworkX + Leiden 클러스터링 | Neo4j |
+| 시간 | 약함 | bi-temporal (valid + transaction time) |
+| 강점 | "**71.5× 토큰 절감**" 클레임 | "에이전트가 시간 따라 학습" |
+
+→ 이름 비슷해도 풀려는 문제 다름. 코딩/구조 → Graphify, 누적 메모리 → Graphiti.
+
+### Graph RAG 의 토큰 절감 메커니즘
+
+핵심: **LLM 한테 raw 청크 보내지 말고, 미리 추출한 정제 사실을 보내라.**
+
+```
+Naive RAG  → top-5 청크 ≈ 2,500 토큰을 LLM input 에
+Graph RAG  → "callers: [auth.login, ...]" ≈ 30 토큰
+```
+
+분해:
+1. **그래프 자체가 raw 의 압축** (10:1)
+2. **결정적 응답** — false positive 0, top-k noise 없음 (3:1)
+3. **raw text 안 보냄** — 정제 사실만 (3:1)
+4. **인덱싱 무료** (Graphify 는 AST, LLM 안 부름)
+
+→ 100 query 누적 시 ~80× 절감. 단 **구조 query 한정** (의미 query 면 vector RAG 가 여전히 default).
+
+### 적용 가능 영역
+
+| 도메인 | 적합도 |
+|---|---|
+| 코드베이스 (함수 관계, 영향범위, 호출 추적) | ★★★ Graphify |
+| 에이전트 메모리 (사람·이벤트·관계 누적) | ★★★ Graphiti |
+| 단순 PDF Q&A / FAQ | ✗ vector RAG 가 더 단순·저렴 |
+
+### 산업 흐름 — 3패러다임 공존
+
+> RAG 의 미래는 단일 패러다임이 아님.
+> - **의미** → vector + hybrid (Phase 3)
+> - **구조** → graph (Graphify)
+> - **시간/관계** → temporal graph (Graphiti)
+
+본인 데이터의 본질이 어느 쪽이냐에 맞춰 고름.
+
+## 폴더 내용
+
+- `graphify_demo/` — naive RAG vs graph RAG 의 토큰 절감 비교 데모
+  - `sample_code/` — 미니 codebase (db / user / auth)
+  - `naive_rag.py` — 10줄 청크 + BM25 top-k
+  - `graph_rag.py` — AST → 그래프 (노드/엣지) → 구조 traversal
+  - `compare.py` — 같은 query 두 RAG 에 던져 결과 나란히
+
+```powershell
+cd 06_ontology\graphify_demo
+python compare.py
+```
 
 ## 참고
 
-- **Microsoft Research**: "From local to global: A GraphRAG approach" (2024)
-- **LightRAG** (HKU, 2024)
-- **Neo4j blog**: LLM + Graph 시리즈
-- YouTube: Neo4j 공식 GraphRAG 영상, Matthew Berman GraphRAG 해설
-- Palantir 관점: "Ontology" 는 체계적 데이터 모델링의 이름 — 제품팀이 공유하는 어휘
+- Microsoft Research: "From local to global: A GraphRAG approach" (2024)
+- Zep: Graphiti GitHub (`getzep/graphiti`)
+- LightRAG (HKU, 2024)
+- Neo4j blog: LLM + Graph 시리즈
 - 논문: GraphRAG, HippoRAG, LightRAG
-
-## 끝났을 때 할 줄 아는 것
-
-- "이 질문은 벡터로 안 풀린다" 는 순간을 구별한다.
-- LLM 으로 문서 → KG 파이프라인을 짠다.
-- GraphRAG 가 naive RAG 보다 유리한 질문 유형을 설명한다.
-
-## 회고
-
-- 배운 것 5개:
-- 헷갈린 것 3개:
-- 다음에 궁금한 것 3개:

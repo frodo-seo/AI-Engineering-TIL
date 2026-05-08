@@ -1,48 +1,62 @@
 # Phase 3. RAG 심화
 
-**목표**: "벡터DB 에 넣고 top-k" 수준을 넘어선다.
-실전 RAG 가 쓰는 모든 개선을 **직접 돌리고 수치로 비교** 한다.
+**한 줄**: LLM 이 모르는 정보 (학습 이후, 비공개, 너무 많은 자료) 를 답변 직전에 검색해 prompt 에 끼워 넣는 패턴.
 
-**기간**: 30분 × 15일
+## 잡은 핵심 개념
 
-## Day-by-Day
+### 임베딩 모델
+- 텍스트 → 의미 공간의 벡터. 의미 가까우면 벡터 가깝게.
+- **메커니즘**: encoder transformer (BERT 계열) + **contrastive 학습** (anchor / positive / negatives 로 같은 의미는 가깝게, 다른 의미는 멀게).
+- LLM 과 같은 부품, 다른 학습. **단일 시퀀스 (next-token) vs 쌍 데이터 (contrastive)** 가 결정적 차이.
+- **다국어**: 병렬 corpus 로 학습 → "dog" ↔ "강아지" 가 가까운 벡터. 영어 전용 모델이면 멀어짐.
+- 평가: **MTEB / KO-MTEB leaderboard** 로 후보 추리고 → 본인 골든셋으로 Recall@k / MRR 직접 측정.
+- AWS Bedrock 안: Cohere `embed-multilingual-v3` 가 한국어 1순위, Titan v2 는 차선.
 
-| Day | 주제 | 산출물 |
-|---|---|---|
-| 1 | RAG 파이프라인 한 바퀴 (ingest → index → retrieve → answer) | `rag_v0.py` — 가장 순진한 버전 |
-| 2 | Embedding 모델 비교: OpenAI vs Voyage vs Cohere vs bge | `embed_bench.md` |
-| 3 | Chunking 전략: fixed / recursive / semantic / **late chunking** | `chunking_compare.py` |
-| 4 | 벡터 DB 선택지: Chroma · Qdrant · pgvector 장단점 | `vectordb_note.md` |
-| 5 | BM25 (키워드 검색) 다시 돌아보기 — 왜 여전히 중요한가 | `bm25_demo.py` |
-| 6 | Hybrid search (BM25 + dense) + RRF 스코어 합성 | `hybrid_search.py` |
-| 7 | Reranking: Cohere / Voyage / bge-reranker 비교 | `rerank_bench.md` |
-| 8 | Query transformation: HyDE, decomposition, step-back | `query_transform.py` |
-| 9 | **Anthropic Contextual Retrieval** 재현 (chunk 앞에 문맥 덧붙이기) | `contextual_rag.py` |
-| 10 | Agentic RAG — 모델이 검색을 반복 호출 | `agentic_rag.py` |
-| 11 | Citations / attribution (Anthropic Citations API) | `cite_demo.py` |
-| 12 | RAG 평가 기초: faithfulness · answer relevance · context recall | `ragas_intro.md` |
-| 13 | **Golden dataset 20개 직접 만들기** | `eval/golden.jsonl` |
-| 14 | v0 → 최종 버전 정량 비교 | `rag_final.py` + `eval/report.md` |
-| 15 | 회고 | README 하단 업데이트 |
+### Chunking (RAG 품질의 1순위 변수)
+
+우선순위 순:
+1. **경계 존중** — 문장/단어/코드블록 중간에서 자르지 마라. recursive splitter 또는 구조 기반.
+2. **크기 + overlap** — baseline 300~800 토큰 + overlap 10~20%. 본인 데이터로 측정해 결정.
+3. **메타데이터 보존** — heading, source, section path 같이 저장.
+4. **문서 타입별 전략** — 표·코드·PDF 는 함정 多.
+
+### Hybrid Search
+
+- **Vector** = 의미 일치, **BM25** = 정확 매칭. 둘 다 필요한 이유는 query 가 어느 쪽인지 미리 모르기 때문.
+- **BM25** 는 inverted index 덕분에 query time 무료 + ms 단위. CPU only.
+- **RRF (Reciprocal Rank Fusion)** = `Σ 1/(k+rank)`, k=60. 점수 정규화·가중치 튜닝 불필요. 실무 default.
+- BM25 함정: 희소 토큰 매칭으로 의미 무관 청크가 top-k 진입 (예: "K2 소총" query → "K2 의류" 청크). hybrid + reranker 가 보완.
+
+### Reranker (Cross-encoder)
+
+- bi-encoder (임베딩) = query·청크 따로 인코딩 후 코사인.
+- cross-encoder (rerank) = query+청크 **함께** 인코딩, 토큰 간 cross-attention. 정밀하지만 비싸서 1차 검색 후 top-100 에만.
+- 한국어: **bge-reranker-v2-m3** (OSS, 무료) / **Cohere Rerank multilingual v3** (API, Bedrock).
+- 표준 스택: `BM25+Vector → RRF top-100 → Reranker top-5 → LLM`.
+
+### Prompt Caching
+
+- **prefix 캐싱**. system + tools + few-shot 같은 정적 부분이 캐시.
+- write 1.25x, read 0.1x. **재사용 횟수 N≥2 면 이득, N=1 이면 손해**. TTL 5분 (1h 옵션 있음).
+- 함정: prefix 에 timestamp/ID 박으면 한 토큰 차이로 cache miss. **prefix 결정적이어야**.
+- production 모니터링 필수: `cache_creation` vs `cache_read` 비율. hit rate < 30% 면 끄거나 재설계.
+
+### Contextual Retrieval (Anthropic 2024.09)
+
+- 청크 자체는 작게 자르되, 각 청크 앞에 "이 문서의 어떤 맥락인지" 50~100 토큰 prefix 를 LLM 이 자동 생성해 붙임.
+- **검색 정확도 35% 개선 (논문)**.
+- 비용은 prompt caching 으로 ~90% 절감. **인덱싱 1회성, 검색 매일** 이라 본전 빠르게 뽑힘.
+
+### Batch API
+
+- 24h SLA 양보 → input/output **50% 할인**.
+- caching (×0.4 평균) + batch (×0.5) = 곱연산. OCR 같은 비실시간 + 정적 prefix 작업의 sweet spot.
 
 ## 참고
 
-- **Anthropic blog**: "Contextual Retrieval"
-- **Jason Liu**: "Levels of RAG" + RAG 강의 시리즈 (YouTube)
-- **Eugene Yan**: "Patterns for building LLM-based systems"
-- **LangChain YouTube**: *RAG from scratch* (Lance Martin) — 필수
+- Anthropic: "Contextual Retrieval" (2024.09)
+- Jason Liu: "Levels of RAG"
+- Eugene Yan: "Patterns for building LLM-based systems"
+- LangChain YouTube: *RAG from scratch* (Lance Martin)
 - Chip Huyen *AI Engineering* 6장
-- RAGAS / TruLens docs
 - 논문: "Lost in the Middle" (Liu et al., 2023), "Late Chunking" (Jina)
-
-## 끝났을 때 할 줄 아는 것
-
-- Naive RAG vs Hybrid + Rerank + Contextual 의 성능 차이를 **수치로** 안다.
-- Golden set 으로 RAG 를 회귀 테스트한다.
-- "정답이 긴 문서 뒷부분", "동의어", "멀티홉" 각각에 어떤 기법이 유효한지 고른다.
-
-## 회고
-
-- 배운 것 5개:
-- 헷갈린 것 3개:
-- 다음에 궁금한 것 3개:
