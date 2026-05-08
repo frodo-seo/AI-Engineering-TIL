@@ -24,7 +24,7 @@ Context Engineering → Tools → RAG → Agents → MCP → Ontology → Evals 
 | 6 | Ontology & GraphRAG (**optional**, 도메인 의존) | `06_ontology/` | 10일 |
 | 7 | Evals 심화 & Observability (judge · obs · CI · A/B) | `07_harness/` | 7일 |
 | 8 | Production (보안·비용·배포) | `08_production/` | 10일 |
-| - | Capstone (통합 프로젝트) | `capstone/` | 30일 |
+| - | **Pattern Capstones** — 5 패턴 × 6일 (Phase 1~8 무기 전부 적용) | `capstone/` | 30일 |
 | - | 읽은 자료 요약 | `notes/` | 수시 |
 
 총 약 **130일 ≈ 5개월**. 30분/일 기준. (Phase 0 + Phase 6 skip 시 115일)
@@ -83,4 +83,15 @@ python 00_refresh/setup_check.py
 ```
 
 각 Phase 폴더에 들어가면 Day-by-Day 계획, 참고자료, 산출물 체크리스트가 있다.
-**지금 당장 할 일은: `01_context_eng/README.md` 열기.**
+
+## 진행 상황
+
+| Phase | 상태 |
+|---|---|
+| 1. Context Engineering | 핵심 개념 통과 (token / context window / message roles) |
+| 2. Tool Use & Structured Output | ✓ 코드 커밋 (`02_tools/`) |
+| 2.5. Eval 미니 | 핵심 개념 통과 (golden set · scorer 계층 · 다축 측정) |
+| 3. RAG 심화 | 핵심 개념 통과 (임베딩 · 청킹 · hybrid + RRF · reranker · caching · Contextual Retrieval) |
+| 4. Agents | ← **다음** |
+
+**지금 당장 할 일은: `04_agents/README.md` 열기.**
