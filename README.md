@@ -16,17 +16,18 @@ Context Engineering → Tools → RAG → Agents → MCP → Ontology → Evals 
 |---|---|---|---|
 | 0 | 최신 Claude 기능 refresh (**optional**) | `00_refresh/` | 5일 |
 | 1 | Context Engineering | `01_context_eng/` | 10일 |
-| 2 | Tool Use & Structured Output | `02_tools/` | 10일 |
-| 3 | RAG 심화 | `03_rag/` | 15일 |
-| 4 | Agents (+ LangGraph) | `04_agents/` | 19일 |
+| 2 | Tool Use & Structured Output (+ 보안 1일) | `02_tools/` | 11일 |
+| 2.5 | **Eval 미니** — golden set + 기본 scoring (Phase 3·4 내내 사용) | `07_harness/mini/` | 3일 |
+| 3 | RAG 심화 (Day 1부터 미니 eval 사용) | `03_rag/` | 15일 |
+| 4 | Agents — raw SDK → LangGraph | `04_agents/` | 19일 |
 | 5 | MCP (Model Context Protocol) | `05_mcp/` | 10일 |
-| 6 | Ontology & GraphRAG | `06_ontology/` | 10일 |
-| 7 | Evals & Observability | `07_harness/` | 10일 |
+| 6 | Ontology & GraphRAG (**optional**, 도메인 의존) | `06_ontology/` | 10일 |
+| 7 | Evals 심화 & Observability (judge · obs · CI · A/B) | `07_harness/` | 7일 |
 | 8 | Production (보안·비용·배포) | `08_production/` | 10일 |
 | - | Capstone (통합 프로젝트) | `capstone/` | 30일 |
 | - | 읽은 자료 요약 | `notes/` | 수시 |
 
-총 약 **119일 ≈ 4~5개월**. 30분/일 기준. (Phase 0 skip 시 114일)
+총 약 **130일 ≈ 5개월**. 30분/일 기준. (Phase 0 + Phase 6 skip 시 115일)
 
 ## 학습 규칙
 
