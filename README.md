@@ -1,7 +1,7 @@
 # AI Engineering Notes
 
 AI를 "잘 쓰는" 엔지니어가 되기 위한 학습 저장소.
-Context Engineering → Tools → RAG → Agents → MCP → GraphRAG 까지,
+Context Engineering → Tools → RAG → Agents → MCP 까지,
 **오늘의 AI Engineering** 이 실제로 다루는 본질을 짧게·꾸준히 익힌다.
 
 > **Harness 디자인 / Capstone / Production / Eval 심화** 는 별도 repo 에서 진행.
@@ -22,7 +22,6 @@ Context Engineering → Tools → RAG → Agents → MCP → GraphRAG 까지,
 | 3 | RAG 심화 | `03_rag/` |
 | 4 | Agents | `04_agents/` |
 | 5 | MCP (Model Context Protocol) | `05_mcp/` |
-| 6 | GraphRAG (**optional**, 도메인 의존) | `06_ontology/` |
 | - | 읽은 자료 요약 | `notes/` |
 
 ## 진행 상황
@@ -34,7 +33,6 @@ Context Engineering → Tools → RAG → Agents → MCP → GraphRAG 까지,
 | 3. RAG 심화 | 개념 ✓ | 임베딩 (transformer + contrastive) · 청킹 · hybrid (BM25+vector) + RRF · reranker (cross-encoder) · prompt caching · Contextual Retrieval |
 | 4. Agents | 개념 ✓ (`patterns.md`) | Anthropic 5 패턴 (chaining/routing/parallel/orchestrator/agent) · workflow vs agent 판단 · LangGraph 의 가치 · agent memory |
 | 5. MCP | **개념 + 코드 ✓** | MCP = LLM 측 변화 0, 도구 패키징·배포 표준. host ↔ server (stdio/HTTP). LLM 은 MCP 모름 — host 가 다리. CLI vs MCP 의 실용적 균형. |
-| 6. GraphRAG | **개념 + 코드 ✓** (`graphify_demo`) | Graph RAG 는 raw 청크 대신 **AST 가 뽑은 구조 사실** 을 LLM 에 보냄 → 80× 토큰 절감. 구조 query 영역 한정. |
 
 ## 참고 자료 (상시 열람)
 
